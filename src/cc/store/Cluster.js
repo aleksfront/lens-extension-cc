@@ -97,12 +97,17 @@ export class Cluster {
     // NOTE: cluster is ready/provisioned (and we can generate a kubeConfig for it) if
     //  these fields are all available and defined, and cluster isn't being deleted
     this.ready = !!(
-      !this.deleteInProgress &&
-      data.status?.providerStatus?.loadBalancerHost &&
-      data.status?.providerStatus?.apiServerCertificate &&
-      data.status?.providerStatus?.oidc?.certificate &&
-      data.status?.providerStatus?.oidc?.clientId &&
-      data.status?.providerStatus?.oidc?.ready
+      (
+        !this.deleteInProgress &&
+        data.status?.providerStatus?.loadBalancerHost &&
+        data.status?.providerStatus?.apiServerCertificate &&
+        data.status?.providerStatus?.oidc?.certificate &&
+        data.status?.providerStatus?.oidc?.clientId
+      )
+      // DEBUG CONFIRM: why is this flag false on my test instance while MCC
+      //  shows everything green?
+      // NOTE: there's also `data.status?.providerStatus?.oidc?.ready` but this
+      //  flag doesn't appear to matter when it comes to generating the kubeConfig
     );
 
     /** @member {string|null} */

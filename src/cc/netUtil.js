@@ -1,6 +1,12 @@
 import { get } from 'lodash';
 import nodeFetch from 'node-fetch';
+import https from 'https'; // DEBUG REMOVE once cert chain issues fixed and BEFORE MERGE to master
 import * as strings from '../strings';
+
+// DEBUG REMOVE once cert chain issues fixed and BEFORE MERGE to master
+const httpsAgent = new https.Agent({
+  rejectUnauthorized: false,
+});
 
 async function tryExtractBody(response, extractMethod) {
   let body = null;
@@ -66,12 +72,19 @@ export function normalizeUrl(url) {
 export async function request(
   url,
   requestOptions,
-  { expectedStatuses, extractBodyMethod = 'json', errorMessage }
+  { expectedStatuses, extractBodyMethod = 'json', errorMessage } = {}
 ) {
   let response = {};
 
   try {
-    response = await nodeFetch(url, requestOptions);
+    response = await nodeFetch(url, {
+      ...requestOptions,
+
+      // DEBUG REMOVE once cert chain issues fixed and BEFORE MERGE to master
+      //  make sure the URL you start with is https; if you start with http
+      //  and it gets redirected to https, the agent won't be the right one
+      agent: url.startsWith('https:') ? httpsAgent : undefined,
+    });
   } catch (e) {
     return {
       expectedStatuses,

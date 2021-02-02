@@ -26,7 +26,7 @@ let extension; // {LensRendererExtension} instance reference
 // Store
 //
 
-class AddClustersProviderStore extends ProviderStore {
+class ClusterActionsProviderStore extends ProviderStore {
   // @override
   makeNew() {
     return {
@@ -37,7 +37,7 @@ class AddClustersProviderStore extends ProviderStore {
   }
 }
 
-const pr = new AddClustersProviderStore();
+const pr = new ClusterActionsProviderStore();
 
 //
 // Internal Methods
@@ -105,14 +105,37 @@ const _getClusterAccess = async function ({
   password,
   offline = false,
 }) {
-  const authClient = new AuthClient(cloudUrl, config);
+  const authClient = new AuthClient({ baseUrl: cloudUrl, config });
 
-  const { error, body } = await authClient.getToken(
+  // DEBUG TODO: When SSO, we need to authClient.getSsoAuthUrl() and open that in the
+  //  browser again in order to generate another set of tokens to use for the
+  //  kubeConfig, so we can either provide a state flag to the request, which
+  //  Keycloak, in good OAuth form, should send back on the redirect, so that
+  //  we can route the request back into this provider from the eventBus -> View.js -> here,
+  //  or we need to register yet another redirect_uri with Keycloak; either way,
+  //  we need a way to know the difference between a redirect because we're
+  //  just trying to list clusters, and a redirect because we're trying to
+  //  generate a kubeConfig...
+
+  // DEBUG TODO: if SSO... can we use the standard 'state' param so we know this is for kubeConfig when we get the redirect to Lens, or do we need permission for another redirect?
+  // function getKeycloakLoginUrl(redirectPage, clientId, offline = false) {
+  //   return (
+  //     `${keycloakConfig.url}/protocol/openid-connect/auth?` +
+  //     queryString.stringify({
+  //       response_type: 'code',
+  //       scope: offline ? 'offline_access openid' : 'openid',
+  //       client_id: clientId || keycloakConfig['client-id'],
+  //       redirect_uri: `${window.location.origin}/${redirectPage}`
+  //     })
+  //   );
+  // }
+
+  const { error, body } = await authClient.getToken({
     username,
     password,
     offline,
-    cluster.idpClientId
-  );
+    clientId: cluster.idpClientId,
+  });
 
   if (error) {
     return { error };
@@ -226,6 +249,8 @@ const _writeKubeConfig = async function ({
       contextName: kubeConfig.contexts[0].name, // must be same context name used in the kubeConfig file
       workspace: workspaceStore.currentWorkspaceId,
 
+      // metadata: {[key: string]: string | number | boolean | object} any extra data to be stored with the cluster
+
       // ownerRef: unique ref/id (up to extension to decide what it is), if unset
       //  then Lens allows the user to remove the cluster; otherwise, only the
       //  extension itself can remove it
@@ -310,7 +335,7 @@ const _notifyNewClusters = function (clusterShims, sticky = true) {
 const _switchToNewWorkspace = function () {
   if (pr.store.newWorkspaces.length <= 0) {
     throw new Error(
-      `[${pkg.name}/AddClustersProvider._notifyAndSwitchToNew] There must be at least one new workspace to switch to!`
+      `[${pkg.name}/ClusterActionsProvider._notifyAndSwitchToNew] There must be at least one new workspace to switch to!`
     );
   }
 
@@ -354,8 +379,15 @@ const _switchToNewWorkspace = function () {
 /**
  * Switch to the specified cluster.
  * @param {string} clusterId ID of the cluster in Lens.
+ * @param {string} [workspaceId] Optional ID of the workspace that contains the
+ *  cluster. If specified, this workspace will be activated before the cluster
+ *  is activated.
  */
-const _switchToCluster = function (clusterId) {
+const _switchToCluster = function (clusterId, workspaceId) {
+  if (workspaceId) {
+    Store.workspaceStore.setActive(workspaceId);
+  }
+
   Store.clusterStore.activeClusterId = clusterId;
   // TODO: doesn't __always__ work; bug in Lens somewhere, and feels like clusterStore
   //  should have setActive(clusterId) like workspaceStore.setActive() and have it do
@@ -611,8 +643,7 @@ const _activateCluster = function ({ namespace, clusterName, clusterId }) {
   const lensCluster = _getLensCluster(clusterId);
 
   if (lensCluster) {
-    Store.workspaceStore.setActive(lensCluster.workspace);
-    _switchToCluster(clusterId);
+    _switchToCluster(clusterId, lensCluster.workspace);
   } else {
     pr.store.error = strings.clusterActionsProvider.errors.clusterNotFound(
       `${namespace}/${clusterName}`
@@ -636,12 +667,12 @@ export const useClusterActions = function () {
   const context = useContext(ClusterActionsContext);
   if (!context) {
     throw new Error(
-      'useAddClusters must be used within an AddClustersProvider'
+      'useAddClusters must be used within an ClusterActionsProvider'
     );
   }
 
   // NOTE: `context` is the value of the `value` prop we set on the
-  //  <AddClustersContext.Provider value={...}/> we return as the <AddClustersProvider/>
+  //  <AddClustersContext.Provider value={...}/> we return as the <ClusterActionsProvider/>
   //  component to wrap all children that should have access to the state (i.e.
   //  all the children that will be able to `useAddClusters()` to access the state)
   const [state] = context;

@@ -80,9 +80,14 @@ The `prepublishOnly` script will automatically produce a production build in the
 
 ## Help
 
-### SSO not supported
+### SSO support
 
-Mirantis Container Cloud instances that use third-party SSO authentication (e.g. Google OAuth) are __not supported__ at this time. We plan on adding support [soon](https://github.com/Mirantis/lens-extension-cc/issues/12).
+Mirantis Container Cloud instances that use third-party SSO authentication via __Keycloak__ are supported.
+
+Since the integration leverages the `lens://` URL protocol handling feature for extensions, __Lens 4.1__ is required, and the __Keycloak Client__ of the instance must be configured as follows:
+
+-   Allow requests from the `"*"` origin. This is because the internal Electron browser used by the Lens App uses a random port. Therefore, the originating URL cannot be predicted.
+-   Allow the following redirect URI: `lens://extensions/@mirantis/lens-extension-cc/oauth/code`
 
 ### Management clusters not selected by default
 

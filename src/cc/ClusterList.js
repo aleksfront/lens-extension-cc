@@ -26,6 +26,7 @@ const CheckList = styled.div(function () {
 
 export const ClusterList = function ({
   clusters,
+  onlyNamespaces,
   selectedClusters,
   onSelection,
   onSelectAll,
@@ -80,6 +81,9 @@ export const ClusterList = function ({
   return (
     <Section className="lecc-ClusterList">
       <h3>{strings.clusterList.title()}</h3>
+      {onlyNamespaces && (
+        <p>{strings.clusterList.onlyNamespaces(onlyNamespaces)}</p>
+      )}
       <CheckList>
         {clusters.sort(compareClusters).map((
           cluster // list ALL clusters
@@ -113,6 +117,7 @@ export const ClusterList = function ({
 
 ClusterList.propTypes = {
   clusters: propTypes.arrayOf(propTypes.instanceOf(Cluster)), // ALL clusters, even non-ready ones
+  onlyNamespaces: propTypes.arrayOf(propTypes.string), // optional list of namespace IDs to which the list is restricted
   selectedClusters: propTypes.arrayOf(propTypes.instanceOf(Cluster)),
   onSelection: propTypes.func, // ({ cluster: Cluster, selected: boolean }) => void
   onSelectAll: propTypes.func, // ({ selected: boolean }) => void

@@ -60,7 +60,7 @@ export function extractJwtPayload(token) {
  *  and an error message is returned.
  */
 export async function refreshToken(baseUrl, config, authAccess) {
-  const authClient = new AuthClient(baseUrl, config);
+  const authClient = new AuthClient({ baseUrl, config });
   const { response, body, error } = await authClient.refreshToken(
     authAccess.refreshToken
   );
@@ -83,7 +83,7 @@ export async function refreshToken(baseUrl, config, authAccess) {
  * @returns {string|undefined} `undefined` if successful; error message otherwise.
  */
 export async function logout(baseUrl, config, authAccess) {
-  const authClient = new AuthClient(baseUrl, config);
+  const authClient = new AuthClient({ baseUrl, config });
   const { error: refreshError } = await authClient.logout(
     authAccess.refreshToken
   );
@@ -96,7 +96,7 @@ export async function logout(baseUrl, config, authAccess) {
 }
 
 /**
- * Makes an authenticated request using the tokens in the app state.
+ * Makes an authenticated request using the tokens in the `authAccess` object.
  * @param {Object} options
  * @param {string} options.baseUrl MCC URL. Must NOT end with a slash.
  * @param {Object} options.config MCC Configuration object.
@@ -118,7 +118,7 @@ export async function authedRequest({
 }) {
   // NOTE: it's useless to fetch if we don't have a token, or we can't refresh it
   if (!authAccess.token || authAccess.isRefreshTokenExpired()) {
-    authAccess.clearTokens();
+    authAccess.resetTokens();
     return { error: strings.authUtil.errors.invalidCredentials(), status: 401 };
   }
 

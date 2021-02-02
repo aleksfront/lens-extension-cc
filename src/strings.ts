@@ -45,12 +45,26 @@ export const view: Dict = {
       addKubeCluster: (name) => `Adding ${name} cluster...`,
     },
     kubeConfigEvent: {
+      errors: {
+        invalidEventData: () =>
+          `The data provided for adding the cluster is invalid. Make sure the ${mccShortName} instance is compatible with this extension and try again.`,
+      },
       clusterAdded: (name) =>
         `The ${name} cluster was successfully added to Lens.`,
       clusterSkipped: (name) => `The ${name} cluster was already in Lens.`,
     },
     activateClusterEvent: {
+      errors: {
+        invalidEventData: () =>
+          `The data provided for activating the cluster is invalid. Make sure the ${mccShortName} instance is compatible with this extension and try again.`,
+      },
       clusterActivated: (name) => `The ${name} cluster was activated.`,
+    },
+    addClustersEvent: {
+      errors: {
+        invalidEventData: () =>
+          `The data provided for adding clusters is invalid. Make sure the ${mccShortName} instance is compatible with this extension and try again.`,
+      },
     },
     close: () => 'Reset back to normal view',
   },
@@ -80,14 +94,14 @@ export const view: Dict = {
   created if it doesn't exist already).
 </p>
 `;
+
       text += showLinkInfo
         ? `
 <h2>Links</h2>
 <p>
-  When activating this extension via links from a ${mccFullName} instance (requires
-  a version of Lens that supports <code>lens://</code> protocol requests), the extension
-  UI will add an X (Close) button to the top/right corner of its main panel in
-  certain cases. Click the Close button to return to the default view.
+  When activating this extension via links from a ${mccFullName} instance (requires Lens
+  4.1 or later), the extension UI will add an X (Close) button to the top/right corner
+  of its main panel in certain cases. Click the Close button to return to the default view.
 </p>
 `
         : '';
@@ -97,18 +111,49 @@ export const view: Dict = {
 };
 
 export const login: Dict = {
-  title: () => 'Sign in',
+  title: () => 'Get clusters',
   url: { label: () => 'Instance URL:' },
   username: { label: () => 'Username:' },
   password: { label: () => 'Password:' },
+  sso: {
+    message: () =>
+      `This instance uses SSO: Your default browser should open to the ${mccShortName} sign in page, if you aren't already signed in. Once you have signed-in, your browser will prompt you to open Lens. Be sure to accept in order to complete the process. Once you have opted to open Lens, the browser window can be closed.`,
+  },
+  basic: {
+    message: () => 'This instance requires a username and password for access:',
+  },
   action: {
-    label: () => 'Get clusters',
+    access: () => 'Access',
+    login: () => 'Sign in',
+    refresh: () => 'Refresh',
+  },
+};
+
+export const basicAuthProvider: Dict = {
+  errors: {
+    ssoOnly: () =>
+      `The specified ${mccShortName} instance only supports SSO logins. Try again with the "${login.sso[
+        'label'
+      ]()}" option selected.`,
+  },
+};
+
+export const ssoAuthProvider: Dict = {
+  errors: {
+    basicOnly: () =>
+      `The specified ${mccShortName} instance only supports basic logins. Try again without the "${login.sso[
+        'label'
+      ]()}" option selected.`,
+    authCode: () =>
+      `Authorization with the ${mccShortName} instance failed. Try again, and be sure to use the correct SSO account.`,
   },
 };
 
 export const clusterList: Dict = {
   title: () => 'Select clusters',
   notReady: () => '(not ready)',
+  onlyNamespaces: (namespaces = []) =>
+    `Showing only the following namespaces: ${namespaces.join(', ')}`,
   action: {
     selectAll: {
       label: () => 'Select all',
@@ -155,7 +200,7 @@ export const preferencesPanel: Dict = {
   saved: () => 'Preferences saved!',
 };
 
-export const clustersProvider: Dict = {
+export const clusterDataProvider: Dict = {
   errors: {
     invalidNamespacePayload: () =>
       'Failed to parse namespace payload: Unexpected data format.',
